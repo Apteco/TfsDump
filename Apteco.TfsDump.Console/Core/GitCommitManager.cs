@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 
-namespace Apteco.TfsDump.Console
+namespace Apteco.TfsDump.Console.Core
 {
   public class GitCommitManager
   {
@@ -20,20 +20,20 @@ namespace Apteco.TfsDump.Console
     #endregion
 
     #region public methods
-    public async Task WriteCommitDetails(TextWriter writer)
+    public async Task WriteCommitDetails(bool duplicateCommitsForMultipleWorkitems, TextWriter writer)
     {
       List<GitRepository> repositories = await gitClient.GetRepositoriesAsync();
 
       await WriteHeader(writer);
       foreach (GitRepository repository in repositories)
       {
-        await WriteCommitDetailsForRepository(repository, writer);
+        await WriteCommitDetailsForRepository(repository, duplicateCommitsForMultipleWorkitems, writer);
       }
     }
     #endregion
 
     #region private methods
-    private async Task WriteCommitDetailsForRepository(GitRepository repository, TextWriter writer)
+    private async Task WriteCommitDetailsForRepository(GitRepository repository, bool duplicateCommitsForMultipleWorkitems, TextWriter writer)
     {
       int skip = 0;
       while (true)
@@ -56,9 +56,16 @@ namespace Apteco.TfsDump.Console
           }
           else
           {
-            foreach (ResourceRef workItemRef in commit.WorkItems)
+            if (duplicateCommitsForMultipleWorkitems)
             {
-              await WriteCommitDetails(repository, commit, workItemRef.Id, writer);
+              foreach (ResourceRef workItemRef in commit.WorkItems)
+              {
+                await WriteCommitDetails(repository, commit, workItemRef.Id, writer);
+              }
+            }
+            else
+            {
+              await WriteCommitDetails(repository, commit, commit.WorkItems[0]?.Id, writer);
             }
           }
         }

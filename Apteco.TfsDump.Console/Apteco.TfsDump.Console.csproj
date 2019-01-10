@@ -4,9 +4,15 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <AssemblyName>TfsDump</AssemblyName>
+    <Company>Apteco</Company>
+    <FileVersion>1.1.0.0</FileVersion>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <Authors>Apteco</Authors>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.4.3" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.144.1-preview" />
   </ItemGroup>
 </Project>

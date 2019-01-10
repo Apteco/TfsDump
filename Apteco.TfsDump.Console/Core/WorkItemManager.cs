@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
-namespace Apteco.TfsDump.Console
+namespace Apteco.TfsDump.Console.Core
 {
   public class WorkItemManager
   {

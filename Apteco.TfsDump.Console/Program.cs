@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
+using Apteco.TfsDump.Console.Core;
+using CommandLine;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
@@ -10,43 +12,46 @@ namespace Apteco.TfsDump.Console
 {
   public class Program
   {
-    private const string WorkItemsDumpType = "workitems";
-    private const string GitDumpType = "git";
-
-    public static void Main(string[] args)
+    public static int Main(string[] args)
     {
-      if (args.Length < 3)
-      {
-        System.Console.WriteLine("Usage: TfsDump.exe <collection url> <username> <password> [git|workitems]");
-        return;
-      }
-
-      Task task = Run(args[0], args[1], args[2], args.Length >= 4? args[3] : GitDumpType);
-      task.Wait();
+      return Parser.Default.ParseArguments<GitCommandLineOptions, WorkItemsCommandLineOptions>(args)
+        .MapResult(
+          (GitCommandLineOptions opts) => RunGit(opts),
+          (WorkItemsCommandLineOptions opts) => RunWorkItems(opts),
+          errs => 1
+        );
     }
 
-    private static async Task Run(string collectionUrl, string username, string password, string type)
+    private static int RunGit(GitCommandLineOptions options)
     {
-      VssCredentials creds = new VssCredentials(new WindowsCredential(new NetworkCredential(username, password)));
-      VssConnection connection = new VssConnection(new Uri(collectionUrl), creds);
-
-      WorkItemTrackingHttpClient witClient = connection.GetClient<WorkItemTrackingHttpClient>();
+      VssConnection connection = CreateConnection(options);
       GitHttpClient gitClient = connection.GetClient<GitHttpClient>();
 
-      switch (type)
-      {
-        case GitDumpType:
-          await new GitCommitManager(gitClient).WriteCommitDetails(System.Console.Out);
-          break;
+      Task task = new GitCommitManager(gitClient).WriteCommitDetails(options.DuplicateCommitsForMultipleWorkitems, System.Console.Out);
+      task.Wait();
+      return 0;
+    }
 
-        case WorkItemsDumpType:
-          await new WorkItemManager(witClient).WriteWorkItemDetails(System.Console.Out);
-          break;
+    private static int RunWorkItems(WorkItemsCommandLineOptions options)
+    {
+      VssConnection connection = CreateConnection(options);
+      WorkItemTrackingHttpClient witClient = connection.GetClient<WorkItemTrackingHttpClient>();
 
-        default:
-          System.Console.Error.WriteLine("Bad dump type: "+type);
-          break;
-      }
+      Task task = new WorkItemManager(witClient).WriteWorkItemDetails(System.Console.Out);
+      task.Wait();
+      return 0;
+    }
+
+    private static VssConnection CreateConnection(AbstractCommandLineOptions options)
+    {
+      WindowsCredential windowsCredential;
+      if (string.IsNullOrEmpty(options.Username))
+        windowsCredential = new WindowsCredential(true);
+      else
+        windowsCredential = new WindowsCredential(new NetworkCredential(options.Username, options.Password));
+
+      VssCredentials creds = new VssCredentials(windowsCredential);
+      return new VssConnection(new Uri(options.CollectionUrl), creds);
     }
   }
 }

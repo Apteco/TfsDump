@@ -1,4 +1,4 @@
-﻿namespace Apteco.TfsDump.Console
+﻿namespace Apteco.TfsDump.Console.Core
 {
   public static class StringExtensions
   {
