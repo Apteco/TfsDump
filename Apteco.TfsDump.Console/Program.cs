@@ -44,13 +44,14 @@ namespace Apteco.TfsDump.Console
 
     private static VssConnection CreateConnection(AbstractCommandLineOptions options)
     {
-      WindowsCredential windowsCredential;
-      if (string.IsNullOrEmpty(options.Username))
-        windowsCredential = new WindowsCredential(true);
+      VssCredentials creds;
+      if (!string.IsNullOrEmpty(options.PersonalAccessToken))
+        creds = new VssBasicCredential(string.Empty, options.PersonalAccessToken);
+      else if (!string.IsNullOrEmpty(options.Username))
+        creds = new VssCredentials(new WindowsCredential(new NetworkCredential(options.Username, options.Password)));
       else
-        windowsCredential = new WindowsCredential(new NetworkCredential(options.Username, options.Password));
+        creds = new VssCredentials(new WindowsCredential(true));
 
-      VssCredentials creds = new VssCredentials(windowsCredential);
       return new VssConnection(new Uri(options.CollectionUrl), creds);
     }
   }

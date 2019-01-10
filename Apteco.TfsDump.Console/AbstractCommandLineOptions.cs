@@ -12,5 +12,8 @@ namespace Apteco.TfsDump.Console
 
     [Option('p', Required = false, HelpText = "TFS Password")]
     public string Password { get; set; }
+
+    [Option('t', Required = false, HelpText = "TFS Personal Access Token")]
+    public string PersonalAccessToken { get; set; }
   }
 }
