@@ -72,37 +72,44 @@ namespace Apteco.TfsDump.Core.TfsManagers
     private async Task InitialiseSink(ISink sink)
     {
       await sink.InitialiseSink(
-        "Id", 
-        "Project", 
-        "Title", 
-        "AreaPath", 
-        "IterationPath", 
-        "WorkItemType",
-        "State", 
-        "Reason", 
-        "AssignedTo", 
-        "CreatedDate", 
-        "CreatedBy",
-        "ChangedDate", 
-        "ChangedBy");
+        new string[]
+        {
+          "Id",
+          "Project",
+          "Title",
+          "AreaPath",
+          "IterationPath",
+          "WorkItemType",
+          "State",
+          "Reason",
+          "AssignedTo",
+          "CreatedDate",
+          "CreatedBy",
+          "ChangedDate",
+          "ChangedBy"
+        },
+        "Id");
     }
 
     private async Task WriteWorkItemDetails(WorkItem workitem, ISink sink)
     {
       await sink.Write(
-        workitem.Id.ToString(),
-        GetField(workitem, TeamProjectFieldName),
-        GetField(workitem, TitleFieldName),
-        GetField(workitem, AreaPathFieldName),
-        GetField(workitem, IterationPathFieldName),
-        GetField(workitem, WorkItemTypeFieldName),
-        GetField(workitem, StateFieldName),
-        GetField(workitem, ReasonFieldName),
-        GetField(workitem, AssignedToFieldName),
-        GetField(workitem, CreatedDateFieldName),
-        GetField(workitem, CreatedByFieldName),
-        GetField(workitem, ChangedDateFieldName),
-        GetField(workitem, ChangedByFieldName));
+        new string[]
+        {
+          workitem.Id.ToString(),
+          GetField(workitem, TeamProjectFieldName),
+          GetField(workitem, TitleFieldName),
+          GetField(workitem, AreaPathFieldName),
+          GetField(workitem, IterationPathFieldName),
+          GetField(workitem, WorkItemTypeFieldName),
+          GetField(workitem, StateFieldName),
+          GetField(workitem, ReasonFieldName),
+          GetField(workitem, AssignedToFieldName),
+          GetField(workitem, CreatedDateFieldName),
+          GetField(workitem, CreatedByFieldName),
+          GetField(workitem, ChangedDateFieldName),
+          GetField(workitem, ChangedByFieldName)
+        });
     }
 
     private string GetField(WorkItem workitem, string key)

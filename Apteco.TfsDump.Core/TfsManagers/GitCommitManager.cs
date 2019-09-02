@@ -75,23 +75,30 @@ namespace Apteco.TfsDump.Core.TfsManagers
     private async Task InitialiseSink(ISink sink)
     {
       await sink.InitialiseSink(
-        "RepositoryName",
-        "CommitId", 
-        "CommitDate",
-        "CommitAuthor",
-        "Comment",
-        "WorkItemId");
+        new string[]
+        {
+          "RepositoryName",
+          "CommitId",
+          "CommitDate",
+          "CommitAuthor",
+          "Comment",
+          "WorkItemId"
+        },
+        "CommitId");
     }
 
     private async Task WriteCommitDetails(GitRepository repository, GitCommitRef commit, string workItemId, ISink sink)
     {
       await sink.Write(
-        repository.Name,
-        commit.CommitId,
-        commit.Author.Date.ToString("s"),
-        commit.Author.Name,
-        commit.Comment,
-        workItemId);
+        new string[]
+        {
+          repository.Name,
+          commit.CommitId,
+          commit.Author.Date.ToString("s"),
+          commit.Author.Name,
+          commit.Comment,
+          workItemId
+        });
     }
     #endregion
   }

@@ -26,9 +26,11 @@ namespace Apteco.TfsDump.Console
     private static int RunGit(GitCommandLineOptions options)
     {
       VssConnection connection = CreateConnection(options);
+      ISink sink = CreateSink("git", options);
+
       GitHttpClient gitClient = connection.GetClient<GitHttpClient>();
 
-      Task task = new GitCommitManager(gitClient).WriteCommitDetails(options.DuplicateCommitsForMultipleWorkitems, new TextWriterSink(System.Console.Out));
+      Task task = new GitCommitManager(gitClient).WriteCommitDetails(options.DuplicateCommitsForMultipleWorkitems, sink);
       task.Wait();
       return 0;
     }
@@ -36,9 +38,10 @@ namespace Apteco.TfsDump.Console
     private static int RunWorkItems(WorkItemsCommandLineOptions options)
     {
       VssConnection connection = CreateConnection(options);
+      ISink sink = CreateSink("workitems", options);
       WorkItemTrackingHttpClient witClient = connection.GetClient<WorkItemTrackingHttpClient>();
 
-      Task task = new WorkItemManager(witClient).WriteWorkItemDetails(new TextWriterSink(System.Console.Out));
+      Task task = new WorkItemManager(witClient).WriteWorkItemDetails(sink);
       task.Wait();
       return 0;
     }
@@ -55,5 +58,17 @@ namespace Apteco.TfsDump.Console
 
       return new VssConnection(new Uri(options.CollectionUrl), creds);
     }
+
+    private static ISink CreateSink(string commandName, AbstractCommandLineOptions options)
+    {
+      if (!string.IsNullOrEmpty(options.ConnectionString))
+      {
+        string tableName = string.IsNullOrEmpty(options.DatabaseTableName) ? commandName : options.DatabaseTableName;
+        return new DatabaseSink(options.ConnectionString, tableName);
+      }
+
+      return new TextWriterSink(System.Console.Out);
+    }
+
   }
 }
