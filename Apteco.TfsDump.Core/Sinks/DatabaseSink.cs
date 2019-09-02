@@ -13,17 +13,22 @@ namespace Apteco.TfsDump.Core.Sinks
     private string[] fieldNames;
     private int keyFieldNameIndex;
     private string tableName;
+    private string collectionUrl;
 
-    public DatabaseSink(string connectionString, string tableName)
+    public DatabaseSink(string connectionString, string tableName, string collectionUrl)
     {
       this.connectionString = connectionString;
       this.tableName = tableName;
+      this.collectionUrl = collectionUrl;
     }
 
     public Task InitialiseSink(string[] fieldNames, string keyFieldName)
     {
       if (fieldNames == null)
         throw new ArgumentNullException(nameof(fieldNames));
+
+      if (keyFieldName == null)
+        throw new ArgumentNullException(nameof(keyFieldName));
 
       if (initialised)
         throw new Exception("This sink has already been initialised");
@@ -32,6 +37,7 @@ namespace Apteco.TfsDump.Core.Sinks
         throw new ArgumentException($"The keyFieldName ({keyFieldName}) isn't listed as one of the fields");
 
       this.fieldNames = fieldNames;
+      this.collectionUrl = collectionUrl;
       keyFieldNameIndex = Array.IndexOf(fieldNames, keyFieldName);
       initialised = true;
 
@@ -51,15 +57,10 @@ namespace Apteco.TfsDump.Core.Sinks
         connection.Open();
         using (IDbCommand command = connection.CreateCommand())
         {
-          IDbDataParameter parameter = command.CreateParameter();
-          parameter.ParameterName = "@KEY";
-          parameter.DbType = DbType.String;
-          parameter.Value = data[keyFieldNameIndex];
-          command.Parameters.Add(parameter);
-
           command.CommandText =
             $"DELETE FROM [{tableName}]" + Environment.NewLine +
-            $"WHERE [{fieldNames[keyFieldNameIndex]}] = @KEY";
+            $"WHERE CollectionUrl = {AddStringParameter(command, "COLLECTIONURL", collectionUrl)}" + Environment.NewLine + 
+            $"AND [{fieldNames[keyFieldNameIndex]}] = {AddStringParameter(command, "KEY", data[keyFieldNameIndex])}";
 
           command.ExecuteNonQuery();
         }
@@ -67,29 +68,33 @@ namespace Apteco.TfsDump.Core.Sinks
         using (IDbCommand command = connection.CreateCommand())
         {
           command.CommandText =
-            $"INSERT INTO [{tableName}] ({String.Join(", ", fieldNames.Select(f => $"[{f}]"))})" + Environment.NewLine +
+            $"INSERT INTO [{tableName}] ({String.Join(", ", fieldNames.Select(f => $"[{f}]"))}, CollectionUrl)" + Environment.NewLine +
             "VALUES (";
 
           for (int i=0; i < data.Length; i++)
           {
-            IDbDataParameter parameter = command.CreateParameter();
-            parameter.ParameterName = $"@FIELD{i}";
-            parameter.DbType = DbType.String;
-            parameter.Value = data[i] ?? (object)DBNull.Value;
-            command.Parameters.Add(parameter);
-
             if (i > 0)
               command.CommandText += ", ";
 
-            command.CommandText += parameter.ParameterName;
+            command.CommandText += AddStringParameter(command, $"FIELD{i}", data[i]);
           }
 
-          command.CommandText += ")";
+          command.CommandText += $", {AddStringParameter(command, "COLLECTIONURL", collectionUrl)})";
           command.ExecuteNonQuery();
         }
       }
 
       return Task.CompletedTask;
+    }
+
+    private string AddStringParameter(IDbCommand command, string fieldName, string value)
+    {
+      IDbDataParameter parameter = command.CreateParameter();
+      parameter.ParameterName = $"@{fieldName}";
+      parameter.DbType = DbType.String;
+      parameter.Value = value ?? (object)DBNull.Value;
+      command.Parameters.Add(parameter);
+      return parameter.ParameterName;
     }
   }
 }

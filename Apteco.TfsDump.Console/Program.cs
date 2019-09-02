@@ -64,7 +64,7 @@ namespace Apteco.TfsDump.Console
       if (!string.IsNullOrEmpty(options.ConnectionString))
       {
         string tableName = string.IsNullOrEmpty(options.DatabaseTableName) ? commandName : options.DatabaseTableName;
-        return new DatabaseSink(options.ConnectionString, tableName);
+        return new DatabaseSink(options.ConnectionString, tableName, options.CollectionUrl);
       }
 
       return new TextWriterSink(System.Console.Out);
