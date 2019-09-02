@@ -1,9 +1,10 @@
-﻿using System.IO;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Apteco.TfsDump.Core.Sinks;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
-namespace Apteco.TfsDump.Console.Core
+namespace Apteco.TfsDump.Core.TfsManagers
 {
   public class WorkItemManager
   {
@@ -34,7 +35,7 @@ namespace Apteco.TfsDump.Console.Core
     #endregion
 
     #region public methods
-    public async Task WriteWorkItemDetails(TextWriter writer)
+    public async Task WriteWorkItemDetails(ISink sink)
     {
       WorkItemQueryResult queryResult = await witClient.QueryByWiqlAsync(new Wiql()
       {
@@ -53,48 +54,64 @@ namespace Apteco.TfsDump.Console.Core
                 "FROM workitems"
       });
 
-      await WriteHeader(writer);
+      await InitialiseSink(sink);
       foreach (WorkItemReference workItemReference in queryResult.WorkItems)
       {
-        await WriteWorkItemDetails(witClient, workItemReference.Id, writer);
+        await WriteWorkItemDetails(witClient, workItemReference.Id, sink);
       }
     }
     #endregion
 
     #region private methods
-    private async Task WriteWorkItemDetails(WorkItemTrackingHttpClient witClient, int id, TextWriter writer)
+    private async Task WriteWorkItemDetails(WorkItemTrackingHttpClient witClient, int id, ISink sink)
     {
       WorkItem workitem = await witClient.GetWorkItemAsync(id, null, null, WorkItemExpand.All);
-      await WriteWorkItemDetails(workitem, writer);
+      await WriteWorkItemDetails(workitem, sink);
     }
 
-    private async Task WriteHeader(TextWriter writer)
+    private async Task InitialiseSink(ISink sink)
     {
-      await writer.WriteLineAsync("Id\tProject\tTitle\tAreaPath\tIterationPath\tWorkItemType\tState\tReason\tAssignedTo\tCreatedDate\tCreatedBy\tChangedDate\tChangedBy");
+      await sink.InitialiseSink(
+        "Id", 
+        "Project", 
+        "Title", 
+        "AreaPath", 
+        "IterationPath", 
+        "WorkItemType",
+        "State", 
+        "Reason", 
+        "AssignedTo", 
+        "CreatedDate", 
+        "CreatedBy",
+        "ChangedDate", 
+        "ChangedBy");
     }
 
-    private async Task WriteWorkItemDetails(WorkItem workitem, TextWriter writer)
+    private async Task WriteWorkItemDetails(WorkItem workitem, ISink sink)
     {
-      string title = GetField(workitem, TitleFieldName).SanitiseForTabDelimitedString();
-      string project = GetField(workitem, TeamProjectFieldName).SanitiseForTabDelimitedString();
-      string areaPath = GetField(workitem, AreaPathFieldName).SanitiseForTabDelimitedString();
-      string iterationPath = GetField(workitem, IterationPathFieldName).SanitiseForTabDelimitedString();
-      string workItemType = GetField(workitem, WorkItemTypeFieldName).SanitiseForTabDelimitedString();
-      string state = GetField(workitem, StateFieldName).SanitiseForTabDelimitedString();
-      string reason = GetField(workitem, ReasonFieldName).SanitiseForTabDelimitedString();
-      string assignedTo = GetField(workitem, AssignedToFieldName).SanitiseForTabDelimitedString();
-      string createdDate = GetField(workitem, CreatedDateFieldName).SanitiseForTabDelimitedString();
-      string createdBy = GetField(workitem, CreatedByFieldName).SanitiseForTabDelimitedString();
-      string changedDate = GetField(workitem, ChangedDateFieldName).SanitiseForTabDelimitedString();
-      string changedBy = GetField(workitem, ChangedByFieldName).SanitiseForTabDelimitedString();
-
-      await writer.WriteLineAsync($"{workitem.Id}\t{project}\t{title}\t{areaPath}\t{iterationPath}\t{workItemType}\t{state}\t{reason}\t{assignedTo}\t{createdDate}\t{createdBy}\t{changedDate}\t{changedBy}");
+      await sink.Write(
+        workitem.Id.ToString(),
+        GetField(workitem, TeamProjectFieldName),
+        GetField(workitem, TitleFieldName),
+        GetField(workitem, AreaPathFieldName),
+        GetField(workitem, IterationPathFieldName),
+        GetField(workitem, WorkItemTypeFieldName),
+        GetField(workitem, StateFieldName),
+        GetField(workitem, ReasonFieldName),
+        GetField(workitem, AssignedToFieldName),
+        GetField(workitem, CreatedDateFieldName),
+        GetField(workitem, CreatedByFieldName),
+        GetField(workitem, ChangedDateFieldName),
+        GetField(workitem, ChangedByFieldName));
     }
 
     private string GetField(WorkItem workitem, string key)
     {
       if (!workitem.Fields.TryGetValue(key, out object fieldValue))
         return null;
+
+      if (fieldValue is IdentityRef)
+        return ((IdentityRef)fieldValue).DisplayName;
 
       return fieldValue?.ToString();
     }

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using Apteco.TfsDump.Console.Core;
+using Apteco.TfsDump.Core.Sinks;
+using Apteco.TfsDump.Core.TfsManagers;
 using CommandLine;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -27,7 +28,7 @@ namespace Apteco.TfsDump.Console
       VssConnection connection = CreateConnection(options);
       GitHttpClient gitClient = connection.GetClient<GitHttpClient>();
 
-      Task task = new GitCommitManager(gitClient).WriteCommitDetails(options.DuplicateCommitsForMultipleWorkitems, System.Console.Out);
+      Task task = new GitCommitManager(gitClient).WriteCommitDetails(options.DuplicateCommitsForMultipleWorkitems, new TextWriterSink(System.Console.Out));
       task.Wait();
       return 0;
     }
@@ -37,7 +38,7 @@ namespace Apteco.TfsDump.Console
       VssConnection connection = CreateConnection(options);
       WorkItemTrackingHttpClient witClient = connection.GetClient<WorkItemTrackingHttpClient>();
 
-      Task task = new WorkItemManager(witClient).WriteWorkItemDetails(System.Console.Out);
+      Task task = new WorkItemManager(witClient).WriteWorkItemDetails(new TextWriterSink(System.Console.Out));
       task.Wait();
       return 0;
     }
