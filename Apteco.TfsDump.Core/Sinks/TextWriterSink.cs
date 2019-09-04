@@ -37,7 +37,7 @@ namespace Apteco.TfsDump.Core.Sinks
       if (data.Length != numberOfFields)
         throw new Exception($"Can't write data with {data.Length} fields when the sink was initialised with {numberOfFields} fields");
 
-      await writer.WriteLineAsync(string.Join("\t", data.Select(s => s.SanitiseForTabDelimitedString())));
+      await writer.WriteLineAsync(string.Join("\t", data.Select(s => s?.SanitiseForTabDelimitedString())));
     }
   }
 }

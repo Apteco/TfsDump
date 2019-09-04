@@ -4,7 +4,10 @@ using System.Threading.Tasks;
 using Apteco.TfsDump.Core.Sinks;
 using Apteco.TfsDump.Core.TfsManagers;
 using CommandLine;
+using Microsoft.TeamFoundation.Build.WebApi;
+using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -15,10 +18,11 @@ namespace Apteco.TfsDump.Console
   {
     public static int Main(string[] args)
     {
-      return Parser.Default.ParseArguments<GitCommandLineOptions, WorkItemsCommandLineOptions>(args)
+      return Parser.Default.ParseArguments<GitCommandLineOptions, WorkItemsCommandLineOptions, BuildsCommandLineOptions>(args)
         .MapResult(
           (GitCommandLineOptions opts) => RunGit(opts),
           (WorkItemsCommandLineOptions opts) => RunWorkItems(opts),
+          (BuildsCommandLineOptions opts) => RunBuilds(opts),
           errs => 1
         );
     }
@@ -42,6 +46,19 @@ namespace Apteco.TfsDump.Console
       WorkItemTrackingHttpClient witClient = connection.GetClient<WorkItemTrackingHttpClient>();
 
       Task task = new WorkItemManager(witClient).WriteWorkItemDetails(sink);
+      task.Wait();
+      return 0;
+    }
+
+    private static int RunBuilds(BuildsCommandLineOptions options)
+    {
+      VssConnection connection = CreateConnection(options);
+      ISink sink = CreateSink("builds", options);
+      ProjectHttpClient projectHttpClient = connection.GetClient<ProjectHttpClient>();
+      BuildHttpClient buildClient = connection.GetClient<BuildHttpClient>();
+      TestManagementHttpClient testManagementClient = connection.GetClient<TestManagementHttpClient>();
+
+      Task task = new BuildManager(projectHttpClient, buildClient, testManagementClient).WriteBuildDetails(sink);
       task.Wait();
       return 0;
     }
