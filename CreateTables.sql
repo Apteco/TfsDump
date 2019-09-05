@@ -27,6 +27,10 @@ CREATE TABLE [workitems](
 	[CreatedBy] [nvarchar](100) NULL,
 	[ChangedDate] [nvarchar](50) NULL,
 	[ChangedBy] [nvarchar](100) NULL,
+	[ResolvedDate] [nvarchar](50) NULL,
+	[ResolvedBy] [nvarchar](100) NULL,
+	[ClosedDate] [nvarchar](50) NULL,
+	[ClosedBy] [nvarchar](100) NULL,
 	[CollectionUrl] [nvarchar](100)
 	CONSTRAINT [PK_workitems] PRIMARY KEY CLUSTERED 
 	(
@@ -34,7 +38,6 @@ CREATE TABLE [workitems](
 		[CollectionUrl] ASC
 	)
 )
-
 
 CREATE TABLE [builds](
 	[Id] [nvarchar](10),

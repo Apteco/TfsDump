@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Apteco.TfsDump.Core.Sinks;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -21,6 +22,10 @@ namespace Apteco.TfsDump.Core.TfsManagers
     private const string CreatedByFieldName = "System.CreatedBy";
     private const string ChangedDateFieldName = "System.ChangedDate";
     private const string ChangedByFieldName = "System.ChangedBy";
+    private const string ResolvedDateFieldName = "Microsoft.VSTS.Common.ResolvedDate";
+    private const string ResolvedByFieldName = "Microsoft.VSTS.Common.ResolvedBy";
+    private const string ClosedDateFieldName = "Microsoft.VSTS.Common.ClosedDate";
+    private const string ClosedByFieldName = "Microsoft.VSTS.Common.ClosedBy";
     #endregion
 
     #region private fields
@@ -50,7 +55,11 @@ namespace Apteco.TfsDump.Core.TfsManagers
                 $"       {CreatedDateFieldName}, "+
                 $"       {CreatedByFieldName}, "+
                 $"       {ChangedDateFieldName}, "+
-                $"       {ChangedByFieldName} "+
+                $"       {ChangedByFieldName}, "+
+                $"       {ResolvedDateFieldName}, " +
+                $"       {ResolvedByFieldName}, " +
+                $"       {ClosedDateFieldName}, " +
+                $"       {ClosedByFieldName} " +
                 "FROM workitems"
       });
 
@@ -86,7 +95,11 @@ namespace Apteco.TfsDump.Core.TfsManagers
           "CreatedDate",
           "CreatedBy",
           "ChangedDate",
-          "ChangedBy"
+          "ChangedBy",
+          "ResolvedDate",
+          "ResolvedBy",
+          "ClosedDate",
+          "ClosedBy"
         },
         "Id");
     }
@@ -108,7 +121,11 @@ namespace Apteco.TfsDump.Core.TfsManagers
           GetField(workitem, CreatedDateFieldName),
           GetField(workitem, CreatedByFieldName),
           GetField(workitem, ChangedDateFieldName),
-          GetField(workitem, ChangedByFieldName)
+          GetField(workitem, ChangedByFieldName),
+          GetField(workitem, ResolvedDateFieldName),
+          GetField(workitem, ResolvedByFieldName),
+          GetField(workitem, ClosedDateFieldName),
+          GetField(workitem, ClosedByFieldName)
         });
     }
 
@@ -119,6 +136,9 @@ namespace Apteco.TfsDump.Core.TfsManagers
 
       if (fieldValue is IdentityRef)
         return ((IdentityRef)fieldValue).DisplayName;
+
+      if (fieldValue is DateTime)
+        return ((DateTime)fieldValue).ToString("s");
 
       return fieldValue?.ToString();
     }
