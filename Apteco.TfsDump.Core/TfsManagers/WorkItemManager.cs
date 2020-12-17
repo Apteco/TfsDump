@@ -26,6 +26,8 @@ namespace Apteco.TfsDump.Core.TfsManagers
     private const string ResolvedByFieldName = "Microsoft.VSTS.Common.ResolvedBy";
     private const string ClosedDateFieldName = "Microsoft.VSTS.Common.ClosedDate";
     private const string ClosedByFieldName = "Microsoft.VSTS.Common.ClosedBy";
+    private const string PriorityFieldName = "Microsoft.VSTS.Common.Priority";
+    private const string SeverityFieldName = "Microsoft.VSTS.Common.Severity";
     #endregion
 
     #region private fields
@@ -59,7 +61,9 @@ namespace Apteco.TfsDump.Core.TfsManagers
                 $"       {ResolvedDateFieldName}, " +
                 $"       {ResolvedByFieldName}, " +
                 $"       {ClosedDateFieldName}, " +
-                $"       {ClosedByFieldName} " +
+                $"       {ClosedByFieldName}, " +
+                $"       {PriorityFieldName}, " +
+                $"       {SeverityFieldName} " +
                 "FROM workitems"
       });
 
@@ -99,7 +103,9 @@ namespace Apteco.TfsDump.Core.TfsManagers
           "ResolvedDate",
           "ResolvedBy",
           "ClosedDate",
-          "ClosedBy"
+          "ClosedBy",
+          "Priority",
+          "Severity"
         },
         "Id");
     }
@@ -125,7 +131,9 @@ namespace Apteco.TfsDump.Core.TfsManagers
           GetField(workitem, ResolvedDateFieldName),
           GetField(workitem, ResolvedByFieldName),
           GetField(workitem, ClosedDateFieldName),
-          GetField(workitem, ClosedByFieldName)
+          GetField(workitem, ClosedByFieldName),
+          GetField(workitem, PriorityFieldName),
+          GetField(workitem, SeverityFieldName),
         });
     }
 
