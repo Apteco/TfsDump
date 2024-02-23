@@ -18,10 +18,11 @@ namespace Apteco.TfsDump.Console
   {
     public static int Main(string[] args)
     {
-      return Parser.Default.ParseArguments<GitCommandLineOptions, WorkItemsCommandLineOptions, BuildsCommandLineOptions>(args)
+      return Parser.Default.ParseArguments<GitCommandLineOptions, WorkItemsCommandLineOptions, WorkItemRevisionsCommandLineOptions, BuildsCommandLineOptions>(args)
         .MapResult(
           (GitCommandLineOptions opts) => RunGit(opts),
           (WorkItemsCommandLineOptions opts) => RunWorkItems(opts),
+          (WorkItemRevisionsCommandLineOptions opts) => RunWorkItemRevisions(opts),
           (BuildsCommandLineOptions opts) => RunBuilds(opts),
           errs => 1
         );
@@ -46,6 +47,17 @@ namespace Apteco.TfsDump.Console
       WorkItemTrackingHttpClient witClient = connection.GetClient<WorkItemTrackingHttpClient>();
 
       Task task = new WorkItemManager(witClient).WriteWorkItemDetails(sink);
+      task.Wait();
+      return 0;
+    }
+
+    private static int RunWorkItemRevisions(WorkItemRevisionsCommandLineOptions options)
+    {
+      VssConnection connection = CreateConnection(options);
+      ISink sink = CreateSink("workitemrevisions", options);
+      WorkItemTrackingHttpClient witClient = connection.GetClient<WorkItemTrackingHttpClient>();
+
+      Task task = new WorkItemManager(witClient).WriteWorkItemRevisionDetails(sink);
       task.Wait();
       return 0;
     }

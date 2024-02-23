@@ -4,7 +4,7 @@ namespace Apteco.TfsDump.Core.Sinks
 {
   public interface ISink
   {
-    Task InitialiseSink(string[] fieldNames, string keyFieldName);
+    Task InitialiseSink(string[] fieldNames, string[] keyFieldNames);
     Task Write(string[] data);
   }
 }

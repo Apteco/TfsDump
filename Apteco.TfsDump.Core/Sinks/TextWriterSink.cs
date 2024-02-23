@@ -16,7 +16,7 @@ namespace Apteco.TfsDump.Core.Sinks
       this.writer = writer;
     }
 
-    public async Task InitialiseSink(string[] fieldNames, string keyFieldName)
+    public async Task InitialiseSink(string[] fieldNames, string[] keyFieldName)
     {
       if (fieldNames == null)
         throw new ArgumentNullException(nameof(fieldNames));

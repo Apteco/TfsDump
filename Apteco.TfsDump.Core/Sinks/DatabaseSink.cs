@@ -11,7 +11,7 @@ namespace Apteco.TfsDump.Core.Sinks
     private string connectionString;
     private bool initialised;
     private string[] fieldNames;
-    private int keyFieldNameIndex;
+    private int[] keyFieldNameIndices;
     private string tableName;
     private string collectionUrl;
 
@@ -22,23 +22,31 @@ namespace Apteco.TfsDump.Core.Sinks
       this.collectionUrl = collectionUrl;
     }
 
-    public Task InitialiseSink(string[] fieldNames, string keyFieldName)
+    public Task InitialiseSink(string[] fieldNames, string[] keyFieldNames)
     {
       if (fieldNames == null)
         throw new ArgumentNullException(nameof(fieldNames));
 
-      if (keyFieldName == null)
-        throw new ArgumentNullException(nameof(keyFieldName));
+      if (keyFieldNames == null)
+        throw new ArgumentNullException(nameof(keyFieldNames));
+
+      if (keyFieldNames.Length == 0)
+        throw new ArgumentException("keyFieldNames can't be empty", nameof(keyFieldNames));
 
       if (initialised)
         throw new Exception("This sink has already been initialised");
 
-      if (!fieldNames.Contains(keyFieldName))
-        throw new ArgumentException($"The keyFieldName ({keyFieldName}) isn't listed as one of the fields");
+      keyFieldNameIndices = new int[keyFieldNames.Length];
+      for (int i=0; i<keyFieldNames.Length; i++)
+      {
+        if (!fieldNames.Contains(keyFieldNames[i]))
+          throw new ArgumentException($"The keyFieldName ({keyFieldNames[i]}) isn't listed as one of the fields");
+
+        keyFieldNameIndices[i] = Array.IndexOf(fieldNames, keyFieldNames[i]);
+      }
 
       this.fieldNames = fieldNames;
       this.collectionUrl = collectionUrl;
-      keyFieldNameIndex = Array.IndexOf(fieldNames, keyFieldName);
       initialised = true;
 
       return Task.CompletedTask;
@@ -59,8 +67,12 @@ namespace Apteco.TfsDump.Core.Sinks
         {
           command.CommandText =
             $"DELETE FROM [{tableName}]" + Environment.NewLine +
-            $"WHERE CollectionUrl = {AddStringParameter(command, "COLLECTIONURL", collectionUrl)}" + Environment.NewLine + 
-            $"AND [{fieldNames[keyFieldNameIndex]}] = {AddStringParameter(command, "KEY", data[keyFieldNameIndex])}";
+            $"WHERE CollectionUrl = {AddStringParameter(command, "COLLECTIONURL", collectionUrl)}" + Environment.NewLine;
+
+          for (int i = 0; i<keyFieldNameIndices.Length; i++)
+          {
+            command.CommandText += $"AND [{fieldNames[keyFieldNameIndices[i]]}] = {AddStringParameter(command, $"KEY{i}", data[keyFieldNameIndices[i]])}" + Environment.NewLine;
+          }
 
           command.ExecuteNonQuery();
         }

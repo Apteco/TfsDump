@@ -4,6 +4,8 @@ using Apteco.TfsDump.Core.Sinks;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Apteco.TfsDump.Core.TfsManagers
 {
@@ -28,6 +30,28 @@ namespace Apteco.TfsDump.Core.TfsManagers
     private const string ClosedByFieldName = "Microsoft.VSTS.Common.ClosedBy";
     private const string PriorityFieldName = "Microsoft.VSTS.Common.Priority";
     private const string SeverityFieldName = "Microsoft.VSTS.Common.Severity";
+
+    private readonly string[] CommonWorkItemFields = new string[]
+    {
+      "Project",
+      "Title",
+      "AreaPath",
+      "IterationPath",
+      "WorkItemType",
+      "State",
+      "Reason",
+      "AssignedTo",
+      "CreatedDate",
+      "CreatedBy",
+      "ChangedDate",
+      "ChangedBy",
+      "ResolvedDate",
+      "ResolvedBy",
+      "ClosedDate",
+      "ClosedBy",
+      "Priority",
+      "Severity"
+    };
     #endregion
 
     #region private fields
@@ -67,10 +91,26 @@ namespace Apteco.TfsDump.Core.TfsManagers
                 "FROM workitems"
       });
 
-      await InitialiseSink(sink);
+      await InitialiseWorkItemSink(sink);
       foreach (WorkItemReference workItemReference in queryResult.WorkItems)
       {
         await WriteWorkItemDetails(witClient, workItemReference.Id, sink);
+      }
+    }
+
+    public async Task WriteWorkItemRevisionDetails(ISink sink)
+    {
+      WorkItemQueryResult queryResult = await witClient.QueryByWiqlAsync(new Wiql()
+      {
+        Query = $"SELECT {TitleFieldName}, " +
+                $"       {TeamProjectFieldName} " +
+                "FROM workitems"
+      });
+
+      await InitialiseWorkItemRevisionSink(sink);
+      foreach (WorkItemReference workItemReference in queryResult.WorkItems)
+      {
+        await WriteWorkItemRevisions(witClient, workItemReference.Id, sink);
       }
     }
     #endregion
@@ -82,31 +122,13 @@ namespace Apteco.TfsDump.Core.TfsManagers
       await WriteWorkItemDetails(workitem, sink);
     }
 
-    private async Task InitialiseSink(ISink sink)
+    private async Task InitialiseWorkItemSink(ISink sink)
     {
       await sink.InitialiseSink(
         new string[]
         {
           "Id",
-          "Project",
-          "Title",
-          "AreaPath",
-          "IterationPath",
-          "WorkItemType",
-          "State",
-          "Reason",
-          "AssignedTo",
-          "CreatedDate",
-          "CreatedBy",
-          "ChangedDate",
-          "ChangedBy",
-          "ResolvedDate",
-          "ResolvedBy",
-          "ClosedDate",
-          "ClosedBy",
-          "Priority",
-          "Severity"
-        },
+        }.Concat(CommonWorkItemFields).ToArray(),
         "Id");
     }
 
@@ -116,25 +138,60 @@ namespace Apteco.TfsDump.Core.TfsManagers
         new string[]
         {
           workitem.Id.ToString(),
-          GetField(workitem, TeamProjectFieldName),
-          GetField(workitem, TitleFieldName),
-          GetField(workitem, AreaPathFieldName),
-          GetField(workitem, IterationPathFieldName),
-          GetField(workitem, WorkItemTypeFieldName),
-          GetField(workitem, StateFieldName),
-          GetField(workitem, ReasonFieldName),
-          GetField(workitem, AssignedToFieldName),
-          GetField(workitem, CreatedDateFieldName),
-          GetField(workitem, CreatedByFieldName),
-          GetField(workitem, ChangedDateFieldName),
-          GetField(workitem, ChangedByFieldName),
-          GetField(workitem, ResolvedDateFieldName),
-          GetField(workitem, ResolvedByFieldName),
-          GetField(workitem, ClosedDateFieldName),
-          GetField(workitem, ClosedByFieldName),
-          GetField(workitem, PriorityFieldName),
-          GetField(workitem, SeverityFieldName),
-        });
+        }.Concat(GetCommonFields(workitem)).ToArray());
+    }
+
+    private async Task WriteWorkItemRevisions(WorkItemTrackingHttpClient witClient, int id, ISink sink)
+    {
+      List<WorkItem> revisions = await witClient.GetRevisionsAsync(id, null, null, WorkItemExpand.Fields);
+      foreach (WorkItem revision in revisions)
+        await WriteWorkItemRevision(revision, sink);
+    }
+
+    private async Task InitialiseWorkItemRevisionSink(ISink sink)
+    {
+      await sink.InitialiseSink(
+        new string[]
+        {
+          "Id",
+          "Revision"
+        }.Concat(CommonWorkItemFields).ToArray(),
+        new string[] { "Id", "Revision" });
+    }
+
+    private async Task WriteWorkItemRevision(WorkItem workitem, ISink sink)
+    {
+      await sink.Write(
+        new string[]
+        {
+          workitem.Id.ToString(),
+          workitem.Rev.ToString(),
+        }.Concat(GetCommonFields(workitem)).ToArray());
+    }
+
+    private string[] GetCommonFields(WorkItem workitem)
+    {
+      return new string[]
+      {
+        GetField(workitem, TeamProjectFieldName),
+        GetField(workitem, TitleFieldName),
+        GetField(workitem, AreaPathFieldName),
+        GetField(workitem, IterationPathFieldName),
+        GetField(workitem, WorkItemTypeFieldName),
+        GetField(workitem, StateFieldName),
+        GetField(workitem, ReasonFieldName),
+        GetField(workitem, AssignedToFieldName),
+        GetField(workitem, CreatedDateFieldName),
+        GetField(workitem, CreatedByFieldName),
+        GetField(workitem, ChangedDateFieldName),
+        GetField(workitem, ChangedByFieldName),
+        GetField(workitem, ResolvedDateFieldName),
+        GetField(workitem, ResolvedByFieldName),
+        GetField(workitem, ClosedDateFieldName),
+        GetField(workitem, ClosedByFieldName),
+        GetField(workitem, PriorityFieldName),
+        GetField(workitem, SeverityFieldName),
+      };
     }
 
     private string GetField(WorkItem workitem, string key)
