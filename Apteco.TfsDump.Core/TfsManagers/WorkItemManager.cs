@@ -30,6 +30,7 @@ namespace Apteco.TfsDump.Core.TfsManagers
     private const string ClosedByFieldName = "Microsoft.VSTS.Common.ClosedBy";
     private const string PriorityFieldName = "Microsoft.VSTS.Common.Priority";
     private const string SeverityFieldName = "Microsoft.VSTS.Common.Severity";
+    private const string TagsFieldName = "System.Tags";
 
     private readonly string[] CommonWorkItemFields = new string[]
     {
@@ -50,7 +51,8 @@ namespace Apteco.TfsDump.Core.TfsManagers
       "ClosedDate",
       "ClosedBy",
       "Priority",
-      "Severity"
+      "Severity",
+      "Tags"
     };
     #endregion
 
@@ -87,7 +89,8 @@ namespace Apteco.TfsDump.Core.TfsManagers
                 $"       {ClosedDateFieldName}, " +
                 $"       {ClosedByFieldName}, " +
                 $"       {PriorityFieldName}, " +
-                $"       {SeverityFieldName} " +
+                $"       {SeverityFieldName}, " +
+                $"       {TagsFieldName} " +
                 "FROM workitems"
       });
 
@@ -191,6 +194,7 @@ namespace Apteco.TfsDump.Core.TfsManagers
         GetField(workitem, ClosedByFieldName),
         GetField(workitem, PriorityFieldName),
         GetField(workitem, SeverityFieldName),
+        GetField(workitem, TagsFieldName),
       };
     }
 
